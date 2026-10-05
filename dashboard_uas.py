@@ -17,13 +17,13 @@ except ImportError:
     HAS_SCIPY = False
 
 st.set_page_config(
-    page_title="U.S. Flight On-Time Intelligence Dashboard",
+    page_title="Dashboard Ketepatan Waktu Penerbangan AS",
     page_icon="logo.png",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Deteksi tema aktif
+# Deteksi tema aktif Streamlit
 try:
     TEMA = st.context.theme.type
 except Exception:
@@ -31,7 +31,7 @@ except Exception:
 GELAP = TEMA == "dark"
 
 # =====================================================================
-# KONSTANTA, PALET WARNA & SISTEM DESAIN EKSEKUTIF
+# KONSTANTA, PALET WARNA SEMANTIK & SISTEM DESAIN
 # =====================================================================
 FILE_DATA = "Data_Dashboard_Final.parquet"
 FILE_KOORDINAT = "airports_coords.csv"
@@ -42,22 +42,26 @@ MIN_PENERBANGAN = 30
 # Palet Brand Aviation Emerald & Obsidian
 HIJAU_TUA = "#0B5D3B"
 HIJAU_MINT = "#10B981"
-HIJAU_AKS = "#059669"
+HIJAU_MUDA = "#74C69D"
 MERAH_BAHAYA = "#EF4444"
 KUNING_WASPADA = "#F59E0B"
 BIRU_NAV = "#3B82F6"
 UNGU_KORP = "#8B5CF6"
 
-PALET_EMERALD = ["#0B5D3B", "#10B981", "#34D399", "#6EE7B7", "#047857", "#065F46", "#064E3B"]
-SKALA_DELAY = ["#FEF2F2", "#FEE2E2", "#FCA5A5", "#F87171", "#EF4444", "#991B1B"]
-SKALA_VOLUME = ["#FFFBEB", "#FEF3C7", "#FCD34D", "#F59E0B", "#D97706", "#78350F"]
+PALET_EMERALD = [HIJAU_TUA, HIJAU_MINT, HIJAU_MUDA, "#B7E4C7", "#40916C", "#95D5B2", "#2D6A4F", "#D8F3DC"]
+SKALA_DELAY = ["#FFF7ED", "#FFD8A8", "#FF9E57", "#E8552A", "#A3240C"]
+SKALA_VOLUME = ["#FFFBEA", "#FFE49A", "#FFBD5E", "#F2920B", "#B86B00"]
+
+# Peta style & radius (DIPASTIKAN TERDEFINISI UNTUK MENCEGAH NameError)
+GAYA_PETA = "carto-darkmatter" if GELAP else "open-street-map"
+RADIUS_PETA = 24 if GELAP else 18
 
 WARNA_PENYEBAB = {
-    'Maskapai': "#10B981",
-    'Cuaca': "#3B82F6",
-    'Sistem Navigasi Udara (NAS)': "#F59E0B",
-    'Keamanan': "#EF4444",
-    'Pesawat Datang Terlambat': "#8B5CF6",
+    'Maskapai': HIJAU_TUA,
+    'Cuaca': "#2D81C4",
+    'Sistem Navigasi Udara (NAS)': "#F2920B",
+    'Keamanan': "#A3240C",
+    'Pesawat Datang Terlambat': "#74C69D",
 }
 
 NAMA_MASKAPAI = {
@@ -76,6 +80,11 @@ LABEL_PENYEBAB = {
     'total_late_aircraft_delay': 'Pesawat Datang Terlambat',
 }
 
+METRIK_DELAY = {
+    "Persentase delay (>15 menit)": ("delay_rate", "Penerbangan delay (%)"),
+    "Rata-rata delay (menit)": ("avg_delay", "Rata-rata delay (menit)"),
+}
+
 # Template Plotly Global
 px.defaults.template = "plotly_dark" if GELAP else "plotly_white"
 px.defaults.color_discrete_sequence = PALET_EMERALD
@@ -86,7 +95,6 @@ except Exception:
     _versi = (0, 0)
 LEBAR_PENUH = {"width": "stretch"} if _versi >= (1, 50) else {"use_container_width": True}
 
-# Variabel Warna Semantik Antarmuka
 _BG = "#060A08" if GELAP else "#F8FAF9"
 _PANEL = "rgba(18, 27, 22, 0.75)" if GELAP else "rgba(255, 255, 255, 0.85)"
 _PANEL_BORDER = "rgba(16, 185, 129, 0.22)" if GELAP else "rgba(11, 93, 59, 0.12)"
@@ -122,7 +130,7 @@ html, body, [class*="css"] {{
 }}
 .hero h1 {{
     margin: 0;
-    font-size: 2.1rem;
+    font-size: 2.05rem;
     font-weight: 800;
     letter-spacing: -0.02em;
     color: #ffffff;
@@ -131,7 +139,7 @@ html, body, [class*="css"] {{
 }}
 .hero p {{
     margin: 8px 0 0;
-    font-size: 0.98rem;
+    font-size: 0.96rem;
     opacity: .92;
     color: #D1FAE5;
     z-index: 2;
@@ -141,7 +149,7 @@ html, body, [class*="css"] {{
 }}
 .pesawat {{
     position: absolute;
-    bottom: 12px;
+    bottom: 10px;
     left: -70px;
     font-size: 24px;
     animation: terbang 11s linear infinite;
@@ -218,7 +226,7 @@ html, body, [class*="css"] {{
     border-left: 5px solid {_INSIGHT_BORDER};
     border-radius: 12px;
     padding: 14px 18px;
-    margin: 12px 0 20px;
+    margin: 10px 0 20px;
     color: {_INSIGHT_TEKS};
     animation: fadeSlide .5s ease both;
     line-height: 1.55;
@@ -252,11 +260,11 @@ html, body, [class*="css"] {{
 }}
 .status-badge {{
     display: inline-block;
-    padding: 3px 12px;
+    padding: 4px 14px;
     border-radius: 20px;
     font-size: 12px;
     font-weight: 700;
-    margin-top: 8px;
+    margin-top: 10px;
 }}
 .status-diterima {{
     background: rgba(16, 185, 129, 0.2);
@@ -269,6 +277,43 @@ html, body, [class*="css"] {{
     border: 1px solid rgba(239, 68, 68, 0.4);
 }}
 
+/* ====== BADGE SINYAL ====== */
+.badge-bahaya {{
+    background: rgba(239, 68, 68, 0.18);
+    color: #EF4444;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}}
+.badge-aman {{
+    background: rgba(16, 185, 129, 0.18);
+    color: {'#6EE7B7' if GELAP else '#047857'};
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}}
+
+/* ====== STRIP LEGENDA WARNA ====== */
+.legenda {{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 4px 0 16px;
+    font-size: 13px;
+    color: {_TEKS_LABEL};
+}}
+.legenda .strip {{
+    flex: 0 0 140px;
+    height: 10px;
+    border-radius: 6px;
+}}
+
 /* ====== SIDEBAR DENGAN TEMA EXECUTIF ====== */
 [data-testid="stSidebar"] {{
     background: linear-gradient(175deg, #064E3B 0%, #063A29 45%, #031D15 100%);
@@ -278,13 +323,8 @@ html, body, [class*="css"] {{
 [data-testid="stSidebar"] * {{
     color: #ECFDF5 !important;
 }}
-
-/* Radio Selector Button Styling in Sidebar */
-[data-testid="stSidebar"] .stRadio > div {{
-    background: rgba(0, 0, 0, 0.2);
-    padding: 6px;
-    border-radius: 12px;
-    border: 1px solid rgba(52, 211, 153, 0.15);
+[data-testid="stSidebar"] hr {{
+    border-color: rgba(232, 246, 238, 0.22) !important;
 }}
 
 /* Plotly Chart Card Container */
@@ -298,7 +338,13 @@ html, body, [class*="css"] {{
     margin-bottom: 16px;
 }}
 
-/* Judul Heading */
+/* App Container */
+[data-testid="stAppViewContainer"] {{
+    background-color: {_BG};
+    border-radius: 20px;
+    margin: 10px 12px 10px 0;
+}}
+
 h1, h2, h3 {{
     color: {_TEKS_JUDUL};
     font-weight: 700;
@@ -312,11 +358,11 @@ body {{ margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: tra
 .row {{ display: flex; gap: 14px; flex-wrap: wrap; }}
 .k {{
     flex: 1;
-    min-width: 150px;
+    min-width: 140px;
     background: {_PANEL};
     border-left: 5px solid {_INSIGHT_BORDER};
     border-radius: 14px;
-    padding: 14px 18px;
+    padding: 14px 16px;
     box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
     border: 1px solid {_PANEL_BORDER};
     border-left: 5px solid {_INSIGHT_BORDER};
@@ -338,7 +384,7 @@ body {{ margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: tra
 }}
 .v {{
     font-family: 'JetBrains Mono', monospace;
-    font-size: 26px;
+    font-size: 25px;
     font-weight: 700;
     color: {_TEKS_NILAI};
     margin-top: 4px;
@@ -369,7 +415,7 @@ st.markdown("<style>" + CSS_HALAMAN + "</style>", unsafe_allow_html=True)
 def load_data():
     df = pd.read_parquet(FILE_DATA)
 
-    # Tangani kemungkinan nama kolom yang terpotong saat export
+    # Tangani kemungkinan alias nama kolom yang terpotong saat ekspor
     rename_alias = {
         'total_flight': 'total_flights',
         'delayed_fli': 'delayed_flights',
@@ -386,6 +432,7 @@ def load_data():
         'total_secu': 'total_security_delay',
         'total_late_': 'total_late_aircraft_delay',
         'origin_stat': 'origin_state',
+        'dest_stat': 'dest_state',
         'load_facto': 'load_factor'
     }
     for lama, baru in rename_alias.items():
@@ -442,7 +489,7 @@ def load_data():
 
 
 # =====================================================================
-# KOMPONEN TAMPILAN ELITE & HELPER
+# KOMPONEN TAMPILAN, HELPER & ANIMASI PLAY CONTROLS
 # =====================================================================
 def hero(judul, subjudul, tag="BTS FLIGHT RADAR INTELLIGENCE"):
     st.markdown(f"""
@@ -464,7 +511,7 @@ def narasi(teks):
     aman = html.escape(teks)
     aman = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", aman)
     aman = re.sub(r"\*(.+?)\*", r"<i>\1</i>", aman)
-    st.markdown(f"<div class='insight'>💡 <b>Insight Operasional:</b> {aman}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='insight'>💡 <b>Insight:</b> {aman}</div>", unsafe_allow_html=True)
 
 
 def kotak_hipotesis(judul_h, teks_h, status="Diterima"):
@@ -495,6 +542,45 @@ def tampil(fig):
     fig.update_xaxes(gridcolor="rgba(128,128,128,0.12)", zeroline=False)
     fig.update_yaxes(gridcolor="rgba(128,128,128,0.12)", zeroline=False)
     st.plotly_chart(fig, **LEBAR_PENUH)
+
+
+def legenda_warna(skala, label_rendah="Rendah", label_tinggi="Tinggi"):
+    gradasi = ", ".join(skala)
+    st.markdown(
+        f"<div class='legenda'><span>{label_rendah}</span>"
+        f"<span class='strip' style='background:linear-gradient(90deg,{gradasi})'></span>"
+        f"<span>{label_tinggi}</span></div>", unsafe_allow_html=True)
+
+
+def badge_sinyal(rawan):
+    return "⚠ Rawan delay" if rawan else "✓ Tepat waktu"
+
+
+def atur_animasi(fig, durasi=900):
+    """MENGATUR TOMBOL PLAY & SLIDER: Perlambat animasi agar terbaca dan selaraskan warna."""
+    try:
+        args = fig.layout.updatemenus[0].buttons[0].args[1]
+        args["frame"]["duration"] = durasi
+        args["transition"]["duration"] = durasi // 2
+        fig.layout.updatemenus[0].bgcolor = HIJAU_MINT
+        fig.layout.updatemenus[0].bordercolor = HIJAU_TUA
+        fig.layout.updatemenus[0].font = dict(color="#064E3B" if not GELAP else "#ECFDF5", family="Plus Jakarta Sans", weight="bold")
+    except Exception:
+        pass
+    try:
+        fig.layout.sliders[0].bgcolor = HIJAU_MINT
+        fig.layout.sliders[0].bordercolor = HIJAU_TUA
+        fig.layout.sliders[0].activebgcolor = HIJAU_TUA
+        fig.layout.sliders[0].font = dict(color="#064E3B" if not GELAP else "#ECFDF5", family="Plus Jakarta Sans")
+    except Exception:
+        pass
+
+
+def salju_sekali(bulan):
+    """Efek salju musiman interaktif saat pengguna memilih Nov/Des."""
+    if bulan in ('Nov', 'Des') and st.session_state.get('salju_bulan') != bulan:
+        st.snow()
+    st.session_state['salju_bulan'] = bulan
 
 
 def kpi_row(items):
@@ -558,16 +644,29 @@ def urutkan_bulan(tabel):
     return tabel.sort_values('BULAN')
 
 
+def fmt_metrik(kolom, nilai):
+    return f"{nilai:.1f}%" if kolom == 'delay_rate' else f"{nilai:.1f} menit"
+
+
+def fmt_selisih(kolom, nilai):
+    return f"{nilai:.1f} poin persentase" if kolom == 'delay_rate' else f"{nilai:.1f} menit"
+
+
 def bulan_tersedia(data):
     ada = set(data['BULAN'].unique())
     return [b for b in URUTAN_BULAN if b in ada]
+
+
+def teks_periode(tahun):
+    tahun = sorted(tahun)
+    return str(tahun[0]) if len(tahun) == 1 else f"{tahun[0]}–{tahun[-1]}"
 
 
 # =====================================================================
 # MODUL 1: MODE PUBLIK & PENUMPANG (POV PRAKTIS & NON-TEKNIS)
 # =====================================================================
 def mode_publik_beranda(data):
-    hero("Ringkasan Ketepatan Waktu Penerbangan AS",
+    hero("Dashboard Ketepatan Waktu Penerbangan AS",
          "Panduan komprehensif performa on-time penerbangan domestik Amerika Serikat (2024–2025)",
          tag="🟢 Mode Penumpang & Publik")
 
@@ -582,8 +681,8 @@ def mode_publik_beranda(data):
         ("✈️", "Total Penerbangan", f"{kpi['total_flights']:,.0f}"),
         ("🏆", "Maskapai Terbaik", m_baik['maskapai'].split('(')[0].strip()),
         ("🏢", "Bandara Terpadat", bdr_sibuk),
-        ("💺", "Load Factor Rata-rata", f"{kpi['load_factor']:.1f}%"),
-        ("⏱️", "Ambang Standar", ">15 Menit (FAA/BTS)")
+        ("💺", "Load Factor Nasional", f"{kpi['load_factor']:.1f}%"),
+        ("⏱️", "Standar On-Time", ">15 Menit (FAA/BTS)")
     ])
 
     kpi_row([
@@ -612,85 +711,172 @@ def mode_publik_beranda(data):
         st.markdown(f"<div class='insight'>⚠️ <b>Paling Sering Telat:</b> {m_buruk['maskapai']} dengan rekor delay mencapai <b>{m_buruk['delay_rate']:.1f}%</b>.</div>", unsafe_allow_html=True)
 
     st.markdown("---")
-    st.caption("👈 Gunakan menu navigasi di sidebar untuk mengecek performa maskapai, peta bandara, faktor penyebab, atau mencari rute perjalanan Anda.")
+    if st.button("✈️ Mulai Cek Rekomendasi Rute Penerbangan", type="primary"):
+        st.session_state['menu_aktif_publik'] = "✈️ Cek Rekomendasi Rute (A→B)"
+        st.rerun()
 
 
-def mode_publik_maskapai(data):
-    hero("Performa & Peringkat Maskapai Penerbangan", "Bandingkan maskapai mana yang paling tepat waktu dan minim pembatalan", tag="🟢 Mode Penumpang & Publik")
+def mode_publik_ringkasan(data):
+    hero("Performa & Peringkat Maskapai Penerbangan", "Seberapa tepat waktu masing-masing maskapai penerbangan di Amerika Serikat?", tag="🟢 Mode Penumpang & Publik")
 
-    metrik_opsi = {
-        "Persentase Delay (>15 Menit)": ("delay_rate", "%", SKALA_DELAY),
-        "Rata-rata Menit Keterlambatan": ("avg_delay", " menit", SKALA_DELAY),
-        "Tingkat Pembatalan Penerbangan (%)": ("cancel_rate", "%", SKALA_DELAY)
-    }
-    pilihan = st.radio("Pilih Indikator Evaluasi:", list(metrik_opsi.keys()), horizontal=True)
-    kolom, akhiran, skala = metrik_opsi[pilihan]
+    kpi = hitung_kpi(data)
+    with st.expander("ℹ️ Cara Membaca Metrik Keterlambatan"):
+        st.markdown("""
+        * **Persentase Delay**: Porsi penerbangan yang tiba terlambat lebih dari 15 menit dari jadwal (standar resmi FAA/BTS).
+        * **Rata-rata Delay**: Rata-rata tertimbang (*weighted average*) berbobot jumlah penerbangan, bukan rata-rata sederhana.
+        * **Load Factor**: Persentase keterisian kursi penumpang (total penumpang dibagi kapasitas kursi).
+        """)
 
+    pilihan = st.radio("Tampilkan Peringkat Berdasarkan:", list(METRIK_DELAY.keys()), horizontal=True)
+    kolom, label = METRIK_DELAY[pilihan]
+
+    # Grafik 1: Bar chart delay maskapai
+    st.subheader(f"Peringkat Maskapai ({label})")
+    legenda_warna(SKALA_DELAY, "Aman / Tepat Waktu", "Rawan Terlambat")
     per_maskapai = ringkas(data, 'maskapai').sort_values(kolom, ascending=True)
-
-    fig = px.bar(
+    fig1 = px.bar(
         per_maskapai, x=kolom, y='maskapai', orientation='h', color=kolom,
-        color_continuous_scale=skala,
-        labels={kolom: pilihan, 'maskapai': 'Maskapai Penerbangan'},
-        title=f"Peringkat Maskapai Berdasarkan {pilihan}"
+        color_continuous_scale=SKALA_DELAY,
+        hover_data={'total_flights': ':,.0f', 'delay_rate': ':.1f', 'avg_delay': ':.1f'},
+        labels={kolom: label, 'maskapai': 'Maskapai Penerbangan'}
     )
-    fig.update_traces(marker_line_width=0, marker_cornerradius=6)
-    fig.update_layout(coloraxis_showscale=False)
-    tampil(fig)
+    fig1.update_traces(marker_cornerradius=6)
+    fig1.update_layout(coloraxis_showscale=False)
+    tampil(fig1)
 
-    terbaik = per_maskapai.iloc[0]
-    terburuk = per_maskapai.iloc[-1]
-    narasi(f"Maskapai terbaik dengan {pilihan.lower()} terendah adalah **{terbaik['maskapai']}** ({terbaik[kolom]:.2f}{akhiran}), "
-           f"sedangkan yang memiliki performa paling buruk adalah **{terburuk['maskapai']}** ({terburuk[kolom]:.2f}{akhiran}).")
+    atas, bawah = per_maskapai.iloc[-1], per_maskapai.iloc[0]
+    narasi(f"Keterlambatan tertinggi dialami **{atas['maskapai']}** ({fmt_metrik(kolom, atas[kolom])}), "
+           f"sedangkan yang paling tepat waktu adalah **{bawah['maskapai']}** ({fmt_metrik(kolom, bawah[kolom])}). "
+           f"Selisih performa keduanya mencapai {fmt_selisih(kolom, atas[kolom] - bawah[kolom])}.")
 
-    st.subheader("Peta Panas Keterlambatan Sepanjang Tahun (Maskapai × Bulan)")
-    pivot = urutkan_bulan(ringkas(data, ['BULAN', 'maskapai'])).pivot(index='maskapai', columns='BULAN', values='delay_rate')
+    # Grafik 2: Tren bulanan
+    st.subheader("Tren Delay per Bulan")
+    per_bulan = urutkan_bulan(ringkas(data, 'BULAN'))
+    fig2 = px.line(per_bulan, x='BULAN', y=kolom, markers=True,
+                   color_discrete_sequence=[MERAH_BAHAYA],
+                   category_orders={'BULAN': URUTAN_BULAN}, labels={kolom: label, 'BULAN': 'Bulan'})
+    fig2.update_traces(fill='tozeroy', fillcolor='rgba(239, 68, 68, 0.10)')
+    tampil(fig2)
+
+    # Grafik 3: ANIMASI BAR PER BULAN DENGAN TOMBOL PLAY
+    st.subheader("▶️ Animasi Pergerakan Ranking Delay Maskapai dari Bulan ke Bulan")
+    anim = urutkan_bulan(ringkas(data, ['BULAN', 'maskapai']))
+    anim['BULAN'] = anim['BULAN'].astype(str)
+    fig3 = px.bar(
+        anim, x=kolom, y='maskapai', orientation='h', color=kolom,
+        color_continuous_scale=SKALA_DELAY,
+        animation_frame='BULAN',
+        range_x=[0, anim[kolom].max() * 1.15],
+        range_color=[0, anim[kolom].max()],
+        category_orders={
+            'BULAN': bulan_tersedia(data),
+            'maskapai': per_maskapai['maskapai'].tolist()[::-1]
+        },
+        labels={kolom: label, 'maskapai': 'Maskapai', 'BULAN': 'Bulan'}
+    )
+    fig3.update_traces(marker_cornerradius=6)
+    fig3.update_layout(coloraxis_showscale=False)
+    atur_animasi(fig3, durasi=900)
+    tampil(fig3)
+    st.caption("Tekan tombol **Play ▶** di bawah diagram untuk melihat dinamika pergeseran performa maskapai dari bulan ke bulan.")
+
+    # Grafik 4: Heatmap Bulan x Maskapai
+    st.subheader("Peta Panas Keterlambatan: Maskapai × Bulan")
+    pivot = urutkan_bulan(ringkas(data, ['BULAN', 'maskapai'])).pivot(index='maskapai', columns='BULAN', values=kolom)
     pivot = pivot.reindex(columns=[b for b in URUTAN_BULAN if b in pivot.columns])
-    fig_heat = px.imshow(pivot, color_continuous_scale=SKALA_DELAY, aspect="auto",
-                         labels=dict(x="Bulan", y="Maskapai", color="% Delay"))
-    tampil(fig_heat)
+    fig4 = px.imshow(pivot, color_continuous_scale=SKALA_DELAY, aspect="auto",
+                     labels=dict(x="Bulan", y="Maskapai", color=label))
+    fig4.update_layout(coloraxis_showscale=False)
+    tampil(fig4)
 
 
 def mode_publik_bandara(data):
     hero("Bandara & Lalu Lintas Kepadatan Udara", "Kapan dan di mana lalu lintas bandara paling padat serta rawan kendala?", tag="🟢 Mode Penumpang & Publik")
+    total_semua = data['total_flights'].sum()
 
-    c1, c2 = st.columns([1.1, 1])
-    with c1:
-        st.subheader("10 Bandara Tersibuk di Amerika Serikat")
-        bdr = ringkas(data, 'origin_label').sort_values('total_flights', ascending=False).head(10)
-        fig_bdr = px.bar(bdr.sort_values('total_flights'), x='total_flights', y='origin_label', orientation='h',
-                         color='total_flights', color_continuous_scale=SKALA_VOLUME,
-                         labels={'total_flights': 'Total Keberangkatan', 'origin_label': 'Bandara Asal'})
-        fig_bdr.update_traces(marker_cornerradius=6)
-        fig_bdr.update_layout(coloraxis_showscale=False)
-        tampil(fig_bdr)
-    with c2:
-        st.subheader("Tren Volume Penerbangan Nasional per Bulan")
-        per_bln = urutkan_bulan(data.groupby('BULAN')['total_flights'].sum().reset_index())
-        fig_bln = px.line(per_bln, x='BULAN', y='total_flights', markers=True,
-                          labels={'total_flights': 'Penerbangan', 'BULAN': 'Bulan'},
-                          color_discrete_sequence=[HIJAU_MINT])
-        fig_bln.update_traces(fill='tozeroy', fillcolor='rgba(16, 185, 129, 0.12)')
-        tampil(fig_bln)
+    st.subheader("10 Bandara Tersibuk di Amerika Serikat")
+    legenda_warna(SKALA_VOLUME, "Sepi", "Ramai")
+    bdr = ringkas(data, 'origin_label').sort_values('total_flights', ascending=False).head(10)
+    fig1 = px.bar(bdr.sort_values('total_flights'), x='total_flights', y='origin_label', orientation='h',
+                  color='total_flights', color_continuous_scale=SKALA_VOLUME,
+                  labels={'total_flights': 'Total Penerbangan', 'origin_label': 'Bandara Asal'})
+    fig1.update_traces(marker_cornerradius=6)
+    fig1.update_layout(coloraxis_showscale=False)
+    tampil(fig1)
 
-    st.subheader("Peta Kepadatan Lalu Lintas Penerbangan Nasional")
+    t = bdr.iloc[0]
+    narasi(f"**{t['origin_label']}** adalah bandara tersibuk dengan {t['total_flights']:,.0f} penerbangan "
+           f"({t['total_flights'] / total_semua * 100:.1f}% dari seluruh penerbangan nasional). "
+           f"Sepuluh bandara teratas menangani {bdr['total_flights'].sum() / total_semua * 100:.1f}% total lalu lintas udara.")
+
+    st.subheader("Tren Volume Penerbangan Nasional per Bulan")
+    per_bulan = urutkan_bulan(data.groupby('BULAN')['total_flights'].sum().reset_index())
+    fig2 = px.bar(per_bulan, x='BULAN', y='total_flights', color='total_flights',
+                  category_orders={'BULAN': URUTAN_BULAN},
+                  labels={'total_flights': 'Total Penerbangan', 'BULAN': 'Bulan'})
+    fig2.update_traces(marker_cornerradius=6)
+    tampil(fig2)
+
+    # Grafik 3: ANIMASI DENSITY MAP NASIONAL DENGAN TOMBOL PLAY
+    st.subheader("▶️ Peta Kepadatan Penerbangan Antar-Bulan (Play Control)")
     if 'origin_lat' in data.columns and data['origin_lat'].notna().any():
         peta = urutkan_bulan(data.groupby(['BULAN', 'ORIGIN', 'origin_lat', 'origin_lon'])['total_flights'].sum().reset_index())
         peta['BULAN'] = peta['BULAN'].astype(str)
         skala_p = [[0, "rgba(255,189,94,0)"], [0.35, SKALA_VOLUME[2]], [1, SKALA_VOLUME[4]]]
-        fig_peta = px.density_map(
-            peta, lat='origin_lat', lon='origin_lon', z='total_flights', radius=22,
-            animation_frame='BULAN', category_orders={'BULAN': bulan_tersedia(data)},
-            center=dict(lat=39, lon=-98), zoom=3, map_style=GAYA_PETA,
-            range_color=[0, peta['total_flights'].max()], opacity=0.88,
-            color_continuous_scale=skala_p
-        )
-        fig_peta.update_layout(height=490)
+        
+        try:
+            fig_peta = px.density_map(
+                peta, lat='origin_lat', lon='origin_lon', z='total_flights', radius=RADIUS_PETA,
+                animation_frame='BULAN', category_orders={'BULAN': bulan_tersedia(data)},
+                center=dict(lat=39, lon=-98), zoom=3, map_style=GAYA_PETA,
+                range_color=[0, peta['total_flights'].max()], opacity=0.88,
+                color_continuous_scale=skala_p, labels={'total_flights': 'Penerbangan'}
+            )
+        except Exception:
+            fig_peta = px.density_mapbox(
+                peta, lat='origin_lat', lon='origin_lon', z='total_flights', radius=RADIUS_PETA,
+                animation_frame='BULAN', category_orders={'BULAN': bulan_tersedia(data)},
+                center=dict(lat=39, lon=-98), zoom=3, mapbox_style=GAYA_PETA,
+                range_color=[0, peta['total_flights'].max()], opacity=0.88,
+                color_continuous_scale=skala_p, labels={'total_flights': 'Penerbangan'}
+            )
+
+        atur_animasi(fig_peta, durasi=1100)
+        fig_peta.update_layout(height=520)
         tampil(fig_peta)
+        st.caption("Tekan tombol **Play ▶** pada slider peta di atas untuk melihat persebaran kepadatan udara sepanjang tahun.")
+
+    st.subheader("Bandara Tersibuk pada Bulan Tertentu")
+    bulan_pilih = st.selectbox("Pilih Bulan untuk Meninjau Kepadatan:", bulan_tersedia(data))
+    salju_sekali(bulan_pilih)
+    top_b = ringkas(data[data['BULAN'] == bulan_pilih], 'origin_label').sort_values('total_flights', ascending=False).head(10)
+    fig_top = px.bar(top_b.sort_values('total_flights'), x='total_flights', y='origin_label', orientation='h',
+                     color='total_flights', color_continuous_scale=SKALA_VOLUME,
+                     labels={'total_flights': 'Total Penerbangan', 'origin_label': 'Bandara'})
+    fig_top.update_traces(marker_cornerradius=6)
+    fig_top.update_layout(coloraxis_showscale=False)
+    tampil(fig_top)
+
+    st.subheader("5 Bandara Paling Rawan vs 5 Paling Tepat Waktu")
+    st.caption("Hanya membandingkan bandara besar dengan minimal 20.000 penerbangan agar representatif.")
+    bdr_all = ringkas(data, 'origin_label')
+    bdr_besar = bdr_all[bdr_all['total_flights'] >= 20000].sort_values('delay_rate', ascending=False)
+    if len(bdr_besar) >= 2:
+        c1, c2 = st.columns(2)
+        fmt_tabel = lambda t: t.rename(columns={'origin_label': 'Bandara', 'delay_rate': '% Delay',
+                                               'total_flights': 'Total Penerbangan'}).style.format(
+            {'% Delay': '{:.1f}%', 'Total Penerbangan': '{:,.0f}'})
+        with c1:
+            st.markdown("**5 Bandara Paling Rawan Delay**")
+            st.dataframe(fmt_tabel(bdr_besar.head(5)[['origin_label', 'delay_rate', 'total_flights']]), hide_index=True)
+        with c2:
+            st.markdown("**5 Bandara Paling Tepat Waktu**")
+            st.dataframe(fmt_tabel(bdr_besar.tail(5)[['origin_label', 'delay_rate', 'total_flights']].iloc[::-1]), hide_index=True)
 
 
 def mode_publik_penyebab(data):
-    hero("Akar Masalah Keterlambatan", "Mengapa pesawat terlambat? Apa faktor penyebab yang paling dominan?", tag="🟢 Mode Penumpang & Publik")
+    hero("Akar Masalah Keterlambatan", "Mengapa penerbangan tertunda? Apa faktor pemicu yang paling dominan?", tag="🟢 Mode Penumpang & Publik")
+    st.caption("BTS mencatat rincian penyebab khusus untuk penerbangan yang terlambat 15 menit atau lebih.")
 
     kolom_p = list(LABEL_PENYEBAB.keys())
     ada_kolom = [k for k in kolom_p if k in data.columns]
@@ -699,27 +885,39 @@ def mode_publik_penyebab(data):
 
     c1, c2 = st.columns([1.1, 1])
     with c1:
-        st.subheader("Proporsi Total Menit Keterlambatan Nasional")
+        st.subheader("Proporsi Penyebab Delay Nasional")
         fig_pie = px.pie(
-            values=total_menit.values, names=total_menit.index, hole=0.5,
+            values=total_menit.values, names=total_menit.index, hole=0.45,
             color=total_menit.index, color_discrete_map=WARNA_PENYEBAB
         )
-        fig_pie.update_traces(textposition='inside', textinfo='percent+label')
         tampil(fig_pie)
     with c2:
-        st.subheader("Rincian Dampak Keterlambatan")
+        st.subheader("Rincian Dampak Waktu (Menit)")
         df_porsi = pd.DataFrame({
             'Faktor Penyebab': total_menit.index,
-            'Total Menit': total_menit.map('{:,.0f}'.format).values,
+            'Total Menit Delay': total_menit.map('{:,.0f}'.format).values,
             'Persentase': (total_menit / grand_total * 100).map('{:.1f}%'.format).values
         })
         st.dataframe(df_porsi, hide_index=True)
 
-    narasi(f"Faktor dominan nomor satu adalah **{total_menit.index[0]}** ({total_menit.iloc[0]/grand_total*100:.1f}%), "
-           f"disusul oleh **{total_menit.index[1]}** ({total_menit.iloc[1]/grand_total*100:.1f}%). "
+    narasi(f"Penyebab terbesar adalah **{total_menit.index[0]}** ({total_menit.iloc[0]/grand_total*100:.1f}%), "
+           f"diikuti oleh **{total_menit.index[1]}** ({total_menit.iloc[1]/grand_total*100:.1f}%). "
            f"Faktor Keamanan hanya menyumbang porsi sangat kecil (<0.2%).")
 
-    # Stacked bar per maskapai
+    # Komposisi bulanan
+    st.subheader("Komposisi Penyebab Delay per Bulan")
+    per_bulan = data.groupby('BULAN')[ada_kolom].sum().rename(columns=LABEL_PENYEBAB)
+    per_bulan = per_bulan.reindex(bulan_tersedia(data))
+    panjang = per_bulan.reset_index().melt(id_vars='BULAN', var_name='Penyebab', value_name='Menit')
+    fig_bar = px.bar(
+        panjang, x='BULAN', y='Menit', color='Penyebab',
+        color_discrete_map=WARNA_PENYEBAB,
+        category_orders={'BULAN': URUTAN_BULAN, 'Penyebab': list(WARNA_PENYEBAB.keys())},
+        labels={'BULAN': 'Bulan', 'Menit': 'Total Menit Delay'}
+    )
+    tampil(fig_bar)
+
+    # Komposisi per maskapai
     st.subheader("Komposisi Penyebab Delay per Maskapai")
     maskapai_delay = data.groupby('maskapai')[ada_kolom].sum().rename(columns=LABEL_PENYEBAB)
     df_long = maskapai_delay.reset_index().melt(id_vars='maskapai', var_name='Penyebab', value_name='Menit')
@@ -732,46 +930,159 @@ def mode_publik_penyebab(data):
     tampil(fig_stack)
 
 
+def peta_jaringan(data, asal, tujuan):
+    """PETA JARINGAN RUTE BERGARIS KE SELURUH KOTA TUJUAN DARI KOTA ASAL."""
+    sub = data[data['origin_label'] == asal]
+    utama = sub.groupby(['ORIGIN', 'origin_lat', 'origin_lon'])['total_flights'].sum()
+    if utama.empty or sub['origin_lat'].isna().all():
+        st.info("Koordinat bandara asal tidak tersedia untuk menggambar peta rute.")
+        return
+
+    kode_o, o_lat, o_lon = utama.idxmax()
+    jar = sub.groupby(['DEST', 'dest_label', 'dest_lat', 'dest_lon'])['total_flights'].sum().reset_index()
+    jar = pd.concat([jar.nlargest(35, 'total_flights'), jar[jar['dest_label'] == tujuan]]).drop_duplicates('DEST')
+    maks = jar['total_flights'].max()
+
+    fig = go.Figure()
+    for _, r in jar.iterrows():
+        sorot = r['dest_label'] == tujuan
+        try:
+            fig.add_trace(go.Scattermap(
+                lat=[o_lat, r['dest_lat']], lon=[o_lon, r['dest_lon']], mode='lines',
+                line=dict(width=6 if sorot else 1.5 + 3.5 * r['total_flights'] / maks,
+                          color=HIJAU_TUA if sorot else HIJAU_MUDA),
+                opacity=1 if sorot else (0.75 if GELAP else 0.55), hoverinfo='skip', showlegend=False))
+        except Exception:
+            fig.add_trace(go.Scattermapbox(
+                lat=[o_lat, r['dest_lat']], lon=[o_lon, r['dest_lon']], mode='lines',
+                line=dict(width=6 if sorot else 1.5 + 3.5 * r['total_flights'] / maks,
+                          color=HIJAU_TUA if sorot else HIJAU_MUDA),
+                opacity=1 if sorot else (0.75 if GELAP else 0.55), hoverinfo='skip', showlegend=False))
+
+    try:
+        fig.add_trace(go.Scattermap(
+            lat=jar['dest_lat'], lon=jar['dest_lon'], mode='markers', showlegend=False,
+            marker=dict(size=8, color=HIJAU_MINT), hoverinfo='text',
+            text=jar['dest_label'] + " (" + jar['DEST'] + "): " + jar['total_flights'].map('{:,.0f}'.format) + " penerbangan"))
+        fig.add_trace(go.Scattermap(
+            lat=[o_lat], lon=[o_lon], mode='markers', showlegend=False, hoverinfo='text',
+            marker=dict(size=16, color=HIJAU_TUA), text=f"{asal} ({kode_o}) - Kota Asal"))
+        fig.update_layout(map_style=GAYA_PETA, map_center=dict(lat=39, lon=-98), map_zoom=3, height=540)
+    except Exception:
+        fig.add_trace(go.Scattermapbox(
+            lat=jar['dest_lat'], lon=jar['dest_lon'], mode='markers', showlegend=False,
+            marker=dict(size=8, color=HIJAU_MINT), hoverinfo='text',
+            text=jar['dest_label'] + " (" + jar['DEST'] + "): " + jar['total_flights'].map('{:,.0f}'.format) + " penerbangan"))
+        fig.add_trace(go.Scattermapbox(
+            lat=[o_lat], lon=[o_lon], mode='markers', showlegend=False, hoverinfo='text',
+            marker=dict(size=16, color=HIJAU_TUA), text=f"{asal} ({kode_o}) - Kota Asal"))
+        fig.update_layout(mapbox_style=GAYA_PETA, mapbox_center=dict(lat=39, lon=-98), mapbox_zoom=3, height=540)
+
+    tampil(fig)
+
+
 def mode_publik_cek_rute(data):
-    hero("Cek Rekomendasi Rute Penerbangan", "Cari tahu maskapai paling tepat waktu dan kapasitas kursinya sebelum Anda memesan tiket", tag="🟢 Mode Penumpang & Publik")
+    hero("Cek Pola Rute Penerbangan", "Pilih maskapai paling tepat waktu untuk rute perjalananmu", tag="🟢 Mode Penumpang & Publik")
+
+    if 'rute_asal' not in st.session_state:
+        st.session_state['rute_asal'] = "Atlanta"
+    if 'rute_tujuan' not in st.session_state:
+        st.session_state['rute_tujuan'] = None
+
+    # Tombol Cepat
+    bc1, bc2, _ = st.columns(3)
+    if bc1.button("🔥 Rute Terpadat"):
+        top_rute = data.groupby(['origin_label', 'dest_label'])['total_flights'].sum().idxmax()
+        st.session_state['rute_asal'], st.session_state['rute_tujuan'] = top_rute
+    if bc2.button("🔁 Tukar Asal ↔ Tujuan") and st.session_state.get('rute_tujuan'):
+        st.session_state['rute_asal'], st.session_state['rute_tujuan'] = (
+            st.session_state['rute_tujuan'], st.session_state['rute_asal'])
 
     daftar_asal = sorted(data['origin_label'].unique())
     c1, c2, c3 = st.columns(3)
-    asal = c1.selectbox("Kota / Bandara Asal:", daftar_asal, index=0)
+    asal_awal = st.session_state['rute_asal'] if st.session_state['rute_asal'] in daftar_asal else daftar_asal[0]
+    asal = c1.selectbox("Dari Kota:", daftar_asal, index=daftar_asal.index(asal_awal))
+    st.session_state['rute_asal'] = asal
+
     opsi_tujuan = sorted(data.loc[data['origin_label'] == asal, 'dest_label'].unique())
-    tujuan = c2.selectbox("Kota / Bandara Tujuan:", opsi_tujuan if opsi_tujuan else ["Tidak Ada Data"], index=0)
-    bulan_opsi = c3.selectbox("Filter Bulan:", ["Semua Bulan"] + bulan_tersedia(data))
+    tersibuk_tujuan = (data[data['origin_label'] == asal].groupby('dest_label')['total_flights'].sum().idxmax()) if opsi_tujuan else None
+    tujuan_sesi = st.session_state.get('rute_tujuan')
+    tujuan_awal = tujuan_sesi if tujuan_sesi in opsi_tujuan else tersibuk_tujuan
+    tujuan = c2.selectbox("Ke Kota:", opsi_tujuan if opsi_tujuan else ["Tidak Ada Data"],
+                          index=opsi_tujuan.index(tujuan_awal) if tujuan_awal in opsi_tujuan else 0)
+    st.session_state['rute_tujuan'] = tujuan
 
-    sub = data[(data['origin_label'] == asal) & (data['dest_label'] == tujuan)]
-    if bulan_opsi != "Semua Bulan":
-        sub = sub[sub['BULAN'] == bulan_opsi]
+    bulan_pilih = c3.selectbox("Bulan (Peringkat):", ["Semua bulan"] + bulan_tersedia(data))
+    salju_sekali(bulan_pilih)
 
-    if sub.empty:
-        st.warning("Tidak ada riwayat penerbangan pada rute dan periode ini.")
+    rute = data[(data['origin_label'] == asal) & (data['dest_label'] == tujuan)]
+    if rute.empty:
+        st.warning("Tidak ada data penerbangan untuk rute ini pada filter saat ini.")
         return
 
-    kpi = hitung_kpi(sub)
+    kpi = hitung_kpi(rute)
     kpi_row([
-        ("Total Penerbangan", kpi['total_flights'], 0, ""),
-        ("Persentase Delay", kpi['delay_rate'], 1, "%", MERAH_BAHAYA if kpi['delay_rate'] >= 20 else HIJAU_MINT),
-        ("Rata-rata Menit Delay", kpi['avg_delay'], 1, " mnt"),
-        ("Tingkat Keterisian Kursi", kpi['load_factor'], 1, "%")
+        ("Total Penerbangan di Rute", kpi['total_flights'], 0, ""),
+        ("Persentase Delay (>15 mnt)", kpi['delay_rate'], 1, "%", MERAH_BAHAYA if kpi['delay_rate'] >= 20 else HIJAU_MINT),
+        ("Rata-rata Delay", kpi['avg_delay'], 1, " menit"),
+        ("Bulan Paling Ramai", rute.groupby('BULAN')['total_flights'].sum().idxmax(), 0, "")
     ])
 
-    st.subheader(f"Peringkat Rekomendasi Maskapai: {asal} → {tujuan}")
-    rank = ringkas(sub, 'maskapai').sort_values('delay_rate', ascending=True)
-    rank['cukup'] = rank['total_flights'] >= 10
+    ket = "sepanjang tahun" if bulan_pilih == "Semua bulan" else f"bulan {bulan_pilih}"
+    st.subheader(f"Peringkat Maskapai: {asal} → {tujuan} ({ket})")
+    st.caption(f"Maskapai dengan kurang dari {MIN_PENERBANGAN} penerbangan diberi catatan data terbatas.")
 
-    rank_tabel = pd.DataFrame({
-        'Peringkat': [str(i + 1) if ok else "–" for i, ok in enumerate(rank['cukup'])],
-        'Maskapai': rank['maskapai'],
-        'Penerbangan': rank['total_flights'].map('{:,.0f}'.format),
-        '% Delay': rank['delay_rate'].map('{:.1f}%'.format),
-        'Rerata Delay': rank['avg_delay'].map('{:.1f} mnt'.format),
-        'Load Factor': rank['load_factor'].map(lambda x: f"{x:.1f}%" if pd.notna(x) else "n/a"),
-        'Rekomendasi': ["Sangat Disarankan" if i == 0 and ok else ("Kurang Disarankan" if i == len(rank)-1 and ok else "Standar") for i, ok in enumerate(rank['cukup'])]
-    })
-    st.dataframe(rank_tabel, hide_index=True)
+    data_rank = rute if bulan_pilih == "Semua bulan" else rute[rute['BULAN'] == bulan_pilih]
+    if data_rank.empty:
+        st.warning(f"Tidak ada penerbangan di rute ini pada bulan {bulan_pilih}.")
+    else:
+        rank = ringkas(data_rank, 'maskapai')
+        rank['cukup'] = rank['total_flights'] >= MIN_PENERBANGAN
+        rank = rank.sort_values(['cukup', 'delay_rate', 'avg_delay'], ascending=[False, True, True]).head(10).reset_index(drop=True)
+
+        sinyal = [badge_sinyal(False) if i == 0 and ok else (badge_sinyal(True) if i == len(rank)-1 and ok else "") for i, ok in enumerate(rank['cukup'])]
+        tabel_p = pd.DataFrame({
+            'Peringkat': [str(i + 1) if ok else "–" for i, ok in enumerate(rank['cukup'])],
+            'Maskapai': rank['maskapai'],
+            'Total Penerbangan': rank['total_flights'].map('{:,.0f}'.format),
+            '% Delay (>15 mnt)': rank['delay_rate'].map('{:.1f}%'.format),
+            'Rata-rata Delay': rank['avg_delay'].map('{:.1f} mnt'.format),
+            'Load Factor': rank['load_factor'].map(lambda v: f"{v:.1f}%" if pd.notna(v) else "n/a"),
+            'Sinyal': sinyal,
+            'Catatan': ["" if ok else "Data terbatas" for ok in rank['cukup']]
+        })
+        st.dataframe(tabel_p, hide_index=True)
+        st.download_button("⬇️ Unduh Peringkat Rute Ini (CSV)", tabel_p.to_csv(index=False).encode('utf-8'),
+                           file_name=f"peringkat_{asal}_{tujuan}.csv", mime="text/csv")
+
+        # Horizontal Bar Chart Maskapai di Rute
+        rp = rank.iloc[::-1].copy()
+        rp['label'] = rp['delay_rate'].map('{:.1f}%'.format)
+        fig_r = px.bar(rp, x='delay_rate', y='maskapai', orientation='h', color='delay_rate',
+                       color_continuous_scale=SKALA_DELAY, text='label',
+                       labels={'delay_rate': 'Penerbangan Delay (%)', 'maskapai': 'Maskapai'})
+        fig_r.update_traces(marker_cornerradius=6, marker=dict(opacity=rp['cukup'].map({True: 1.0, False: 0.4}).tolist()))
+        fig_r.update_layout(height=max(220, 50 + 40 * len(rp)), coloraxis_showscale=False)
+        tampil(fig_r)
+
+    # Peta Jaringan Rute Bergaris
+    st.subheader("Peta Jaringan Rute Penerbangan")
+    peta_jaringan(data, asal, tujuan)
+
+    # Volume & Delay Bulanan Rute
+    st.subheader("Volume & Persentase Delay per Bulan untuk Rute Ini")
+    c_v1, c_v2 = st.columns(2)
+    with c_v1:
+        vol = urutkan_bulan(rute.groupby('BULAN')['total_flights'].sum().reset_index())
+        fig_v = px.bar(vol, x='BULAN', y='total_flights', color='total_flights', color_continuous_scale=SKALA_VOLUME,
+                       category_orders={'BULAN': URUTAN_BULAN}, labels={'total_flights': 'Penerbangan', 'BULAN': 'Bulan'})
+        fig_v.update_traces(marker_cornerradius=6)
+        tampil(fig_v)
+    with c_v2:
+        dly = urutkan_bulan(ringkas(rute, 'BULAN'))
+        fig_d = px.line(dly, x='BULAN', y='delay_rate', markers=True, category_orders={'BULAN': URUTAN_BULAN},
+                        labels={'delay_rate': 'Delay (%)', 'BULAN': 'Bulan'}, color_discrete_sequence=[MERAH_BAHAYA])
+        tampil(fig_d)
 
 
 # =====================================================================
@@ -783,7 +1094,7 @@ def mode_analis_korelasi(data):
          tag="🔬 Mode Riset & Analis UAS")
 
     st.markdown("""
-    Halaman ini menyajikan pengujian matematis terhadap **Rumusan Masalah 2** dan **Hipotesis Awal H1 & H2**:
+    Halaman ini menyajikan pengujian empiris terhadap **Rumusan Masalah 2** dan **Hipotesis Awal H1 & H2**:
     * **H1**: Terdapat korelasi positif signifikan antara volume traffic (`total_departures`) dengan keterlambatan (`ARR_DELAY`).
     * **H2**: Terdapat korelasi positif antara keterisian kursi (`load_factor`) dengan tingkat delay.
     """)
@@ -794,7 +1105,6 @@ def mode_analis_korelasi(data):
         "🧮 Matriks Korelasi Multivariat"
     ])
 
-    # Agregasi data di level rute (origin-dest)
     df_corr = data.groupby(['ORIGIN', 'DEST']).agg(
         total_flights=('total_flights', 'sum'),
         total_depa=('total_departures', 'sum') if 'total_departures' in data.columns else ('total_flights', 'sum'),
@@ -836,7 +1146,7 @@ def mode_analis_korelasi(data):
         kotak_hipotesis(
             "Hipotesis 1 (H1) — Kepadatan Volume Lalu Lintas",
             f"Korelasi Pearson antara total keberangkatan dan delay menghasilkan r = {r_h1:.4f} dengan p-value = {p_h1:.4e}. "
-            f"{'Secara statistik terbukti signifikan bahwa lonjakan volume penerbangan berkontribusi positif terhadap kenaikan delay bandara.' if status_h1 == 'Diterima' else 'Tidak ditemukan korelasi positif yang signifikan.'}",
+            f"{'Secara statistik terbukti signifikan bahwa peningkatan volume penerbangan berkaitan positif dengan lonjakan delay kedatangan.' if status_h1 == 'Diterima' else 'Tidak ditemukan korelasi positif yang signifikan.'}",
             status=status_h1
         )
 
@@ -868,7 +1178,7 @@ def mode_analis_korelasi(data):
         kotak_hipotesis(
             "Hipotesis 2 (H2) — Kapasitas Operasional",
             f"Korelasi Pearson antara rasio load factor dan tingkat delay adalah r = {r_h2:.4f} (p = {p_h2:.4e}). "
-            f"{'Dukungan empiris menunjukkan bahwa pesawat dengan okupansi penumpang tinggi cenderung mengalami turnaround lebih lama yang memicu keterlambatan.' if status_h2 == 'Diterima' else 'Load factor tidak memperlihatkan korelasi positif yang signifikan terhadap keterlambatan.'}",
+            f"{'Dukungan empiris menunjukkan bahwa pesawat dengan okupansi penumpang tinggi memperlama waktu turnaround dan memicu peningkatan delay.' if status_h2 == 'Diterima' else 'Load factor tidak memperlihatkan korelasi positif yang signifikan terhadap keterlambatan.'}",
             status=status_h2
         )
 
@@ -1066,6 +1376,13 @@ def mode_analis_metodologi():
        $$r = \\frac{\\sum (X - \\bar{X})(Y - \\bar{Y})}{\\sqrt{\\sum (X - \\bar{X})^2 \\sum (Y - \\bar{Y})^2}}$$
     3. **Standar Keterlambatan FAA/BTS**:
        Penerbangan diklasifikasikan sebagai *Delayed* apabila tiba minimal **15 menit** lebih lambat dari jadwal tiket.
+
+    ---
+    ### 👥 Tim Penyusun (Kelompok 7):
+    * **Nadia Maretta Rafa** (24051430038)
+    * **Nabila Dwitya Agustin** (24051430037)
+    * **Carlene Jean Suzzanna Gaitian** (24051430093)
+    * **Muhamad Yunus** (24051430029)
     """)
 
 
@@ -1085,16 +1402,20 @@ pilihan_mode = st.sidebar.radio(
 st.sidebar.markdown("---")
 
 if pilihan_mode == "🟢 Mode Publik & Penumpang":
+    menu_pilihan_default = st.session_state.get('menu_aktif_publik', "🏠 Beranda & Temuan Utama")
+    opsi_menu_p = [
+        "🏠 Beranda & Temuan Utama",
+        "📊 Performa & Peringkat Maskapai",
+        "🏢 Bandara & Kepadatan Wilayah",
+        "🔍 Faktor Penyebab Keterlambatan",
+        "✈️ Cek Rekomendasi Rute (A→B)"
+    ]
     menu = st.sidebar.radio(
         "Menu Penumpang:",
-        [
-            "🏠 Beranda & Temuan Utama",
-            "📊 Performa & Peringkat Maskapai",
-            "🏢 Bandara & Kepadatan Wilayah",
-            "🔍 Faktor Penyebab Keterlambatan",
-            "✈️ Cek Rekomendasi Rute (A→B)"
-        ]
+        opsi_menu_p,
+        index=opsi_menu_p.index(menu_pilihan_default) if menu_pilihan_default in opsi_menu_p else 0
     )
+    st.session_state['menu_aktif_publik'] = menu
 else:
     menu = st.sidebar.radio(
         "Menu Riset Akademisi:",
@@ -1122,7 +1443,7 @@ if pilihan_mode == "🟢 Mode Publik & Penumpang":
     if menu == "🏠 Beranda & Temuan Utama":
         mode_publik_beranda(df_filtered)
     elif menu == "📊 Performa & Peringkat Maskapai":
-        mode_publik_maskapai(df_filtered)
+        mode_publik_ringkasan(df_filtered)
     elif menu == "🏢 Bandara & Kepadatan Wilayah":
         mode_publik_bandara(df_filtered)
     elif menu == "🔍 Faktor Penyebab Keterlambatan":
