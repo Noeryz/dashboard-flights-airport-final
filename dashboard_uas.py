@@ -625,16 +625,12 @@ def pemicu_animasi_musim(bulan_nama, paksa=False):
     if paksa or st.session_state.get('musim_aktif') != sesi_kunci:
         if musim == 'winter':
             st.snow()
-            st.toast(f"❄️ Musim Dingin ({bulan_nama}): Hujan salju dan tantangan cuaca ekstrem penerbangan akhir tahun.", icon="✈️")
         elif musim == 'summer':
             st.balloons()
-            st.toast(f"🎈 Musim Panas ({bulan_nama}): Puncak volume penerbangan liburan musim panas (Summer Vacation).", icon="☀️")
         elif musim == 'spring':
             render_partikel_musim(['🌸', '💮', '🍃', '🌺', '🌸', '✨'], warna_shadow="rgba(244, 114, 182, 0.65)")
-            st.toast(f"🌸 Musim Semi ({bulan_nama}): Guguran bunga musim semi & peningkatan liburan Spring Break.", icon="✈️")
         elif musim == 'autumn':
             render_partikel_musim(['🍂', '🍁', '🌾', '🌰', '🍁', '🍂'], warna_shadow="rgba(234, 88, 12, 0.65)")
-            st.toast(f"🍂 Musim Gugur ({bulan_nama}): Guguran dedaunan musim gugur & transisi menuju lonjakan Thanksgiving.", icon="🛫")
         st.session_state['musim_aktif'] = sesi_kunci
 
 
