@@ -4,3 +4,4 @@ plotly
 pyarrow
 scipy
 statsmodels
+numpy
