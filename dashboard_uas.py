@@ -18,7 +18,7 @@ except ImportError:
 
 st.set_page_config(
     page_title="U.S. Flight On-Time Intelligence Dashboard",
-    page_icon="✈️",
+    page_icon="logo.png",
     layout="wide",
     initial_sidebar_state="expanded"
 )
