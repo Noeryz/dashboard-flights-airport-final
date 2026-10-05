@@ -513,82 +513,102 @@ def load_data():
 # =====================================================================
 # KOMPONEN TAMPILAN, HELPER & SISTEM ANIMASI 4 MUSIM
 # =====================================================================
-def render_partikel_musim(partikel_list, nama_musim, warna_glow="rgba(255, 180, 0, 0.4)"):
-    """Merender hujan partikel animasi visual interaktif di seluruh layar browser (CSS Full-Screen)."""
-    posisi = [
-        (3, 0.1, 4.0, 24), (8, 1.2, 4.8, 30), (14, 0.5, 4.3, 26), (19, 2.0, 5.2, 34),
-        (25, 0.2, 3.8, 22), (31, 1.6, 4.6, 28), (37, 0.8, 5.0, 32), (43, 2.3, 4.2, 24),
-        (49, 0.4, 4.7, 30), (55, 1.5, 4.1, 26), (61, 0.3, 5.3, 34), (67, 2.1, 4.5, 28),
-        (73, 1.0, 4.9, 24), (79, 0.6, 3.9, 30), (85, 2.4, 5.1, 32), (91, 1.3, 4.3, 26),
-        (96, 0.7, 4.7, 28), (5, 2.8, 4.6, 28), (17, 3.2, 5.0, 32), (29, 2.6, 4.2, 24),
-        (41, 3.5, 5.4, 34), (53, 2.9, 4.4, 26), (65, 3.3, 4.9, 30), (77, 2.7, 4.1, 24),
-        (89, 3.6, 5.2, 32), (94, 3.1, 4.5, 28), (11, 3.8, 4.3, 24), (35, 4.0, 4.8, 30),
-        (59, 3.7, 4.0, 26), (83, 3.9, 5.1, 32)
+def render_partikel_musim(partikel_list, warna_shadow="rgba(244, 114, 182, 0.7)"):
+    """Merender hujan partikel animasi visual interaktif penuh di layar (100% kompatibel DOM Streamlit)."""
+    import time
+    stamp = int(time.time() * 1000)
+
+    konfigurasi = [
+        (2, 0.0, 5.0, 28, "gugur-kiri"), (6, 0.8, 5.8, 34, "gugur-kanan"),
+        (11, 0.3, 5.2, 30, "gugur-putar"), (16, 1.4, 6.2, 38, "gugur-melayang"),
+        (21, 0.1, 4.8, 26, "gugur-kanan"), (26, 1.1, 5.6, 32, "gugur-kiri"),
+        (31, 0.5, 5.1, 30, "gugur-melayang"), (36, 1.7, 6.0, 36, "gugur-putar"),
+        (41, 0.2, 4.9, 28, "gugur-kiri"), (46, 1.0, 5.7, 34, "gugur-kanan"),
+        (51, 0.4, 5.3, 30, "gugur-putar"), (56, 1.5, 6.1, 38, "gugur-melayang"),
+        (61, 0.2, 4.7, 26, "gugur-kiri"), (66, 1.2, 5.9, 32, "gugur-kanan"),
+        (71, 0.6, 5.4, 30, "gugur-melayang"), (76, 1.8, 6.3, 36, "gugur-putar"),
+        (81, 0.3, 5.0, 28, "gugur-kanan"), (86, 1.3, 5.8, 34, "gugur-kiri"),
+        (91, 0.7, 5.2, 30, "gugur-putar"), (96, 1.6, 6.0, 32, "gugur-melayang"),
+        (4, 2.0, 5.1, 30, "gugur-putar"), (14, 2.5, 5.9, 36, "gugur-kiri"),
+        (24, 2.2, 5.3, 28, "gugur-kanan"), (34, 2.8, 6.2, 38, "gugur-melayang"),
+        (44, 2.1, 4.9, 26, "gugur-kanan"), (54, 2.7, 5.8, 34, "gugur-kiri"),
+        (64, 2.3, 5.4, 30, "gugur-putar"), (74, 2.9, 6.1, 36, "gugur-melayang"),
+        (84, 2.4, 5.0, 28, "gugur-kiri"), (94, 2.6, 5.7, 32, "gugur-kanan"),
+        (9, 3.2, 5.2, 30, "gugur-melayang"), (29, 3.5, 5.9, 34, "gugur-putar"),
+        (49, 3.1, 4.8, 28, "gugur-kiri"), (69, 3.7, 6.0, 36, "gugur-kanan"),
+        (79, 3.3, 5.3, 30, "gugur-putar"), (89, 3.6, 5.6, 32, "gugur-melayang")
     ]
-    html_partikel = []
-    for i, (left_pos, delay, duration, size) in enumerate(posisi):
+
+    html_items = []
+    for i, (left, delay, dur, size, tipe_anim) in enumerate(konfigurasi):
         char = partikel_list[i % len(partikel_list)]
-        sway_dir = 45 if i % 2 == 0 else -45
-        rot_dir = 360 if i % 3 == 0 else (-360 if i % 3 == 1 else 180)
-        html_partikel.append(
-            f"<div class='partikel-jatuh' style='left:{left_pos}%; animation-delay:{delay:.1f}s; "
-            f"animation-duration:{duration:.1f}s; font-size:{size}px; "
-            f"--sway:{sway_dir}px; --rot:{rot_dir}deg;'>{char}</div>"
+        html_items.append(
+            f'<span class="partikel-item {tipe_anim}" style="left:{left}%; '
+            f'animation-delay:{delay:.1f}s; animation-duration:{dur:.1f}s; font-size:{size}px;">'
+            f'{char}</span>'
         )
 
-    konten_partikel = "".join(html_partikel)
-    css_animasi = f"""
+    markup = f"""
     <style>
-    .wadah-animasi-musim {{
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        pointer-events: none;
-        z-index: 99999999;
-        overflow: hidden;
+    .wadah-partikel-langit {{
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        pointer-events: none !important;
+        z-index: 2147483647 !important;
+        overflow: hidden !important;
     }}
-    .partikel-jatuh {{
-        position: absolute;
-        top: -60px;
+    .partikel-item {{
+        position: absolute !important;
+        top: -10vh;
+        display: inline-block !important;
+        line-height: 1 !important;
+        user-select: none !important;
+        pointer-events: none !important;
+        filter: drop-shadow(0 4px 10px {warna_shadow});
         opacity: 0;
-        user-select: none;
-        pointer-events: none;
-        filter: drop-shadow(0 4px 10px {warna_glow});
-        animation-name: guguranMusim;
-        animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        animation-iteration-count: 1;
-        animation-fill-mode: forwards;
+        will-change: transform, top, opacity;
     }}
-    @keyframes guguranMusim {{
-        0% {{
-            top: -60px;
-            transform: translateX(0) rotate(0deg) scale(0.65);
-            opacity: 0;
-        }}
-        10% {{
-            opacity: 0.95;
-            transform: translateX(calc(var(--sway) * 0.4)) rotate(45deg) scale(1);
-        }}
-        50% {{
-            transform: translateX(var(--sway)) rotate(180deg) scale(1.1);
-            opacity: 0.9;
-        }}
-        85% {{
-            opacity: 0.85;
-            transform: translateX(calc(var(--sway) * -0.4)) rotate(270deg) scale(0.95);
-        }}
-        100% {{
-            top: 105vh;
-            transform: translateX(var(--sway)) rotate(var(--rot)) scale(0.8);
-            opacity: 0;
-        }}
+    @keyframes jatuhKiri {{
+        0% {{ top: -10vh; opacity: 0; transform: translateX(0px) rotate(0deg) scale(0.7); }}
+        12% {{ opacity: 1; transform: translateX(-25px) rotate(45deg) scale(1); }}
+        45% {{ transform: translateX(35px) rotate(160deg) scale(1.1); }}
+        75% {{ opacity: 0.95; transform: translateX(-30px) rotate(270deg) scale(1); }}
+        100% {{ top: 105vh; opacity: 0; transform: translateX(25px) rotate(360deg) scale(0.75); }}
     }}
+    @keyframes jatuhKanan {{
+        0% {{ top: -10vh; opacity: 0; transform: translateX(0px) rotate(0deg) scale(0.7); }}
+        12% {{ opacity: 1; transform: translateX(25px) rotate(-45deg) scale(1); }}
+        45% {{ transform: translateX(-35px) rotate(-160deg) scale(1.1); }}
+        75% {{ opacity: 0.95; transform: translateX(30px) rotate(-270deg) scale(1); }}
+        100% {{ top: 105vh; opacity: 0; transform: translateX(-25px) rotate(-360deg) scale(0.75); }}
+    }}
+    @keyframes jatuhPutar {{
+        0% {{ top: -10vh; opacity: 0; transform: translateX(0px) rotate(0deg) scale(0.7); }}
+        10% {{ opacity: 1; transform: translateX(15px) rotate(90deg) scale(1); }}
+        50% {{ transform: translateX(-20px) rotate(270deg) scale(1.15); }}
+        80% {{ opacity: 0.95; transform: translateX(25px) rotate(450deg) scale(0.95); }}
+        100% {{ top: 105vh; opacity: 0; transform: translateX(-15px) rotate(600deg) scale(0.7); }}
+    }}
+    @keyframes jatuhMelayang {{
+        0% {{ top: -10vh; opacity: 0; transform: translateX(0px) rotate(0deg) scale(0.7); }}
+        15% {{ opacity: 1; transform: translateX(-15px) rotate(30deg) scale(1); }}
+        50% {{ transform: translateX(25px) rotate(90deg) scale(1.05); }}
+        80% {{ opacity: 0.95; transform: translateX(-20px) rotate(150deg) scale(1); }}
+        100% {{ top: 105vh; opacity: 0; transform: translateX(15px) rotate(210deg) scale(0.8); }}
+    }}
+    .gugur-kiri {{ animation-name: jatuhKiri; animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94); animation-iteration-count: 2; animation-fill-mode: forwards; }}
+    .gugur-kanan {{ animation-name: jatuhKanan; animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94); animation-iteration-count: 2; animation-fill-mode: forwards; }}
+    .gugur-putar {{ animation-name: jatuhPutar; animation-timing-function: linear; animation-iteration-count: 2; animation-fill-mode: forwards; }}
+    .gugur-melayang {{ animation-name: jatuhMelayang; animation-timing-function: ease-in-out; animation-iteration-count: 2; animation-fill-mode: forwards; }}
     </style>
-    <div class='wadah-animasi-musim'>{konten_partikel}</div>
+    <div class="wadah-partikel-langit" id="partikel-musim-{stamp}">
+        {''.join(html_items)}
+    </div>
     """
-    st.markdown(css_animasi, unsafe_allow_html=True)
+    st.markdown(markup, unsafe_allow_html=True)
 
 
 def pemicu_animasi_musim(bulan_nama, paksa=False):
@@ -610,10 +630,10 @@ def pemicu_animasi_musim(bulan_nama, paksa=False):
             st.balloons()
             st.toast(f"🎈 Musim Panas ({bulan_nama}): Puncak volume penerbangan liburan musim panas (Summer Vacation).", icon="☀️")
         elif musim == 'spring':
-            render_partikel_musim(['🌸', '💮', '🍃', '🌺', '🌸', '✨'], "Musim Semi", warna_glow="rgba(244, 114, 182, 0.55)")
+            render_partikel_musim(['🌸', '💮', '🍃', '🌺', '🌸', '✨'], warna_shadow="rgba(244, 114, 182, 0.65)")
             st.toast(f"🌸 Musim Semi ({bulan_nama}): Guguran bunga musim semi & peningkatan liburan Spring Break.", icon="✈️")
         elif musim == 'autumn':
-            render_partikel_musim(['🍂', '🍁', '🌾', '🌰', '🍁', '🍂'], "Musim Gugur", warna_glow="rgba(234, 88, 12, 0.55)")
+            render_partikel_musim(['🍂', '🍁', '🌾', '🌰', '🍁', '🍂'], warna_shadow="rgba(234, 88, 12, 0.65)")
             st.toast(f"🍂 Musim Gugur ({bulan_nama}): Guguran dedaunan musim gugur & transisi menuju lonjakan Thanksgiving.", icon="🛫")
         st.session_state['musim_aktif'] = sesi_kunci
 
@@ -991,14 +1011,12 @@ def mode_publik_bandara(data):
         tampil(fig_peta)
 
     st.subheader("Peringkat Bandara pada Periode Musim Tertentu")
-    c_bp1, c_bp2 = st.columns([3, 1.2])
-    with c_bp1:
-        bulan_pilih = st.selectbox("Pilih Bulan untuk Meninjau Kepadatan & Suasana Musim:", bulan_tersedia(data))
-    with c_bp2:
-        st.write("")
-        st.write("")
-        putar_lagi = st.button("✨ Putar Efek Musim", use_container_width=True)
-    pemicu_animasi_musim(bulan_pilih, paksa=putar_lagi)
+    bulan_pilih = st.selectbox(
+        "Pilih Bulan untuk Meninjau Kepadatan & Suasana Musim:",
+        bulan_tersedia(data),
+        key="pilihan_bulan_musim"
+    )
+    pemicu_animasi_musim(bulan_pilih)
 
     top_b = ringkas(data[data['BULAN'] == bulan_pilih], 'origin_label').sort_values('total_flights', ascending=False).head(10)
     fig_top = px.bar(top_b.sort_values('total_flights'), x='total_flights', y='origin_label', orientation='h',
