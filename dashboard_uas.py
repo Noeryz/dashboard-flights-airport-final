@@ -513,7 +513,85 @@ def load_data():
 # =====================================================================
 # KOMPONEN TAMPILAN, HELPER & SISTEM ANIMASI 4 MUSIM
 # =====================================================================
-def pemicu_animasi_musim(bulan_nama):
+def render_partikel_musim(partikel_list, nama_musim, warna_glow="rgba(255, 180, 0, 0.4)"):
+    """Merender hujan partikel animasi visual interaktif di seluruh layar browser (CSS Full-Screen)."""
+    posisi = [
+        (3, 0.1, 4.0, 24), (8, 1.2, 4.8, 30), (14, 0.5, 4.3, 26), (19, 2.0, 5.2, 34),
+        (25, 0.2, 3.8, 22), (31, 1.6, 4.6, 28), (37, 0.8, 5.0, 32), (43, 2.3, 4.2, 24),
+        (49, 0.4, 4.7, 30), (55, 1.5, 4.1, 26), (61, 0.3, 5.3, 34), (67, 2.1, 4.5, 28),
+        (73, 1.0, 4.9, 24), (79, 0.6, 3.9, 30), (85, 2.4, 5.1, 32), (91, 1.3, 4.3, 26),
+        (96, 0.7, 4.7, 28), (5, 2.8, 4.6, 28), (17, 3.2, 5.0, 32), (29, 2.6, 4.2, 24),
+        (41, 3.5, 5.4, 34), (53, 2.9, 4.4, 26), (65, 3.3, 4.9, 30), (77, 2.7, 4.1, 24),
+        (89, 3.6, 5.2, 32), (94, 3.1, 4.5, 28), (11, 3.8, 4.3, 24), (35, 4.0, 4.8, 30),
+        (59, 3.7, 4.0, 26), (83, 3.9, 5.1, 32)
+    ]
+    html_partikel = []
+    for i, (left_pos, delay, duration, size) in enumerate(posisi):
+        char = partikel_list[i % len(partikel_list)]
+        sway_dir = 45 if i % 2 == 0 else -45
+        rot_dir = 360 if i % 3 == 0 else (-360 if i % 3 == 1 else 180)
+        html_partikel.append(
+            f"<div class='partikel-jatuh' style='left:{left_pos}%; animation-delay:{delay:.1f}s; "
+            f"animation-duration:{duration:.1f}s; font-size:{size}px; "
+            f"--sway:{sway_dir}px; --rot:{rot_dir}deg;'>{char}</div>"
+        )
+
+    konten_partikel = "".join(html_partikel)
+    css_animasi = f"""
+    <style>
+    .wadah-animasi-musim {{
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        pointer-events: none;
+        z-index: 99999999;
+        overflow: hidden;
+    }}
+    .partikel-jatuh {{
+        position: absolute;
+        top: -60px;
+        opacity: 0;
+        user-select: none;
+        pointer-events: none;
+        filter: drop-shadow(0 4px 10px {warna_glow});
+        animation-name: guguranMusim;
+        animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        animation-iteration-count: 1;
+        animation-fill-mode: forwards;
+    }}
+    @keyframes guguranMusim {{
+        0% {{
+            top: -60px;
+            transform: translateX(0) rotate(0deg) scale(0.65);
+            opacity: 0;
+        }}
+        10% {{
+            opacity: 0.95;
+            transform: translateX(calc(var(--sway) * 0.4)) rotate(45deg) scale(1);
+        }}
+        50% {{
+            transform: translateX(var(--sway)) rotate(180deg) scale(1.1);
+            opacity: 0.9;
+        }}
+        85% {{
+            opacity: 0.85;
+            transform: translateX(calc(var(--sway) * -0.4)) rotate(270deg) scale(0.95);
+        }}
+        100% {{
+            top: 105vh;
+            transform: translateX(var(--sway)) rotate(var(--rot)) scale(0.8);
+            opacity: 0;
+        }}
+    }}
+    </style>
+    <div class='wadah-animasi-musim'>{konten_partikel}</div>
+    """
+    st.markdown(css_animasi, unsafe_allow_html=True)
+
+
+def pemicu_animasi_musim(bulan_nama, paksa=False):
     """Memicu efek visual musiman interaktif di Amerika Serikat secara otomatis."""
     musim_dict = {
         'Des': 'winter', 'Jan': 'winter', 'Feb': 'winter',
@@ -524,15 +602,19 @@ def pemicu_animasi_musim(bulan_nama):
     musim = musim_dict.get(bulan_nama)
     sesi_kunci = f"animasi_musim_{bulan_nama}"
 
-    if st.session_state.get('musim_aktif') != sesi_kunci:
+    if paksa or st.session_state.get('musim_aktif') != sesi_kunci:
         if musim == 'winter':
             st.snow()
+            st.toast(f"❄️ Musim Dingin ({bulan_nama}): Hujan salju dan tantangan cuaca ekstrem penerbangan akhir tahun.", icon="✈️")
         elif musim == 'summer':
             st.balloons()
+            st.toast(f"🎈 Musim Panas ({bulan_nama}): Puncak volume penerbangan liburan musim panas (Summer Vacation).", icon="☀️")
         elif musim == 'spring':
-            st.toast(f"🌸 Musim Semi ({bulan_nama}): Peningkatan pergerakan penerbangan liburan Spring Break.", icon="✈️")
+            render_partikel_musim(['🌸', '💮', '🍃', '🌺', '🌸', '✨'], "Musim Semi", warna_glow="rgba(244, 114, 182, 0.55)")
+            st.toast(f"🌸 Musim Semi ({bulan_nama}): Guguran bunga musim semi & peningkatan liburan Spring Break.", icon="✈️")
         elif musim == 'autumn':
-            st.toast(f"🍂 Musim Gugur ({bulan_nama}): Transisi cuaca stabil menuju lonjakan Thanksgiving.", icon="🛫")
+            render_partikel_musim(['🍂', '🍁', '🌾', '🌰', '🍁', '🍂'], "Musim Gugur", warna_glow="rgba(234, 88, 12, 0.55)")
+            st.toast(f"🍂 Musim Gugur ({bulan_nama}): Guguran dedaunan musim gugur & transisi menuju lonjakan Thanksgiving.", icon="🛫")
         st.session_state['musim_aktif'] = sesi_kunci
 
 
@@ -602,11 +684,14 @@ def badge_sinyal(rawan):
 
 
 def atur_animasi(fig, durasi=900):
-    """MENGATUR TOMBOL PLAY & SLIDER: Menyelaraskan tampilan kontrol animasi temporal."""
+    """MENGATUR TOMBOL PLAY & SLIDER: Menyelaraskan tampilan kontrol animasi temporal & memastikan redraw berjalan."""
     try:
         args = fig.layout.updatemenus[0].buttons[0].args[1]
         args["frame"]["duration"] = durasi
         args["transition"]["duration"] = durasi // 2
+        args["frame"]["redraw"] = True
+        args["fromcurrent"] = True
+        args["mode"] = "immediate"
         fig.layout.updatemenus[0].bgcolor = HIJAU_MINT
         fig.layout.updatemenus[0].bordercolor = HIJAU_TUA
         fig.layout.updatemenus[0].font = dict(color="#064E3B" if not GELAP else "#ECFDF5", family="Plus Jakarta Sans", weight="bold")
@@ -617,6 +702,10 @@ def atur_animasi(fig, durasi=900):
         fig.layout.sliders[0].bordercolor = HIJAU_TUA
         fig.layout.sliders[0].activebgcolor = HIJAU_TUA
         fig.layout.sliders[0].font = dict(color="#064E3B" if not GELAP else "#ECFDF5", family="Plus Jakarta Sans")
+        if hasattr(fig.layout.sliders[0], 'steps'):
+            for step in fig.layout.sliders[0].steps:
+                if len(step.args) > 1 and isinstance(step.args[1], dict) and "frame" in step.args[1]:
+                    step.args[1]["frame"]["redraw"] = True
     except Exception:
         pass
 
@@ -902,8 +991,14 @@ def mode_publik_bandara(data):
         tampil(fig_peta)
 
     st.subheader("Peringkat Bandara pada Periode Musim Tertentu")
-    bulan_pilih = st.selectbox("Pilih Bulan untuk Meninjau Kepadatan & Suasana Musim:", bulan_tersedia(data))
-    pemicu_animasi_musim(bulan_pilih)
+    c_bp1, c_bp2 = st.columns([3, 1.2])
+    with c_bp1:
+        bulan_pilih = st.selectbox("Pilih Bulan untuk Meninjau Kepadatan & Suasana Musim:", bulan_tersedia(data))
+    with c_bp2:
+        st.write("")
+        st.write("")
+        putar_lagi = st.button("✨ Putar Efek Musim", use_container_width=True)
+    pemicu_animasi_musim(bulan_pilih, paksa=putar_lagi)
 
     top_b = ringkas(data[data['BULAN'] == bulan_pilih], 'origin_label').sort_values('total_flights', ascending=False).head(10)
     fig_top = px.bar(top_b.sort_values('total_flights'), x='total_flights', y='origin_label', orientation='h',
